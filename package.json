@@ -1,0 +1,22 @@
+{
+  "name": "aichat-backend",
+  "version": "0.0.1",
+  "description": "Implementation of Large Language Model service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trenkenshuOleg/aichat-backend.git"
+  },
+  "author": "trenkenshuOleg",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/trenkenshuOleg/aichat-backend/issues"
+  },
+  "homepage": "https://github.com/trenkenshuOleg/aichat-backend#readme",
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
