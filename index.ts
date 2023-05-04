@@ -10,10 +10,18 @@ const api = process.env.API_URL || 'ws://localhost';
 const myPort = Number(process.env.SERVER_PORT) || 8080;
 const prompt = promptSync();
 let answer = '';
+const session: Record<string, string> = {
+  chatHistory: '',
+}
 
-const getQuestion = (): string => {
-  const question: string = prompt('You say: ');
-  return `Write a response that appropriately completes the request.\n### Human:\n${question}\n### Assistant:\n`
+const getQuestion = (ws?: WebSocket): string => {
+  const input = prompt('You say: ');
+  if (input === '/quit' && ws) {
+    ws.close(1000);
+    process.exit();
+  }
+  session.chatHistory += '### Human:\n' + input;
+  return `Write a response that appropriately completes the request.\n${session.chatHistory}\n### Assistant:\n`
 }
 
 const getAnswer = (req: IRequest, websocket: WebSocket): void => {
@@ -28,9 +36,8 @@ const ai = new WebSocket(api);
 
 ai.on('open', (ws: WebSocket) => {
   console.log(`Connected to ${api}`);
-  request.prompt = getQuestion();
-  ai.send(JSON.stringify(request));
-  //getAnswer(request, ws);
+  request.prompt = getQuestion(ai);
+  getAnswer(request, ai);
 })
 
 ai.on('message', (event: WebSocket.MessageEvent) => {
@@ -39,8 +46,10 @@ ai.on('message', (event: WebSocket.MessageEvent) => {
     answer += msg.text;
     console.log(answer);
   } else {
+    session.chatHistory += '\n### Assistant:\n' + answer;
+    answer = '\n';
     console.log('Once again: ')
-    request.prompt = getQuestion();
+    request.prompt = getQuestion(ai);
     getAnswer(request, ai);
   }
 });
