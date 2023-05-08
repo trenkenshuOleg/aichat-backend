@@ -1,8 +1,43 @@
-import { InsertOneResult, MongoClient } from "mongodb";
 import { ISession } from "../common/types";
-import * as dotenv from 'dotenv';
+import { Idb } from "./types";
+import { Collection, MongoClient } from "mongodb";
 
-dotenv.config();
+class db implements Idb {
+  client: MongoClient;
+  sessions: Collection<ISession>;
+
+  constructor(url: string) {
+    this.client = new MongoClient(url);
+    this.sessions =
+    this.client
+        .db("ai_chat")
+        .collection<ISession>('ai_sessions');
+  }
+
+  async get(id: string) {
+    let session: ISession | null = {
+      userId: '',
+      sessionLog: []
+    }
+
+    try {
+      const query = { userId: id };
+      session = await this.sessions.findOne(query);
+    } catch (err: any) {
+      console.log(err.message)
+    }
+
+    return session;
+  }
+
+  async set(session: ISession) {
+    return await this.sessions.updateOne({ userId: session.userId}, { $set:session }, { upsert: true });
+  }
+
+  async purge(session: ISession) {
+    return await this.set({userId: session.userId, sessionLog: []})
+  }
+}
 
 const mongoUrl =
   'mongodb://'
@@ -11,32 +46,8 @@ const mongoUrl =
   + (process.env.MNG_PASSWORD || '')
   + '@'
   + (process.env.MNG_URL || '');
+  + '/ai_chat'
 
-const dbClient = new MongoClient(mongoUrl);
+const dbClient = new db(mongoUrl);
 
-const sessions =
-  dbClient
-    .db("ai_chat")
-    .collection<ISession>('ai_sessions');
-
-const dbGet = async (id: string): Promise<ISession | null> => {
-  let session: ISession | null = {
-    userId: '',
-    sessionLog: []
-  }
-
-  try {
-    const query = { userId: id };
-    session = await sessions.findOne(query);
-  } catch (err) {
-    console.log(err.message)
-  }
-
-  return session;
-}
-
-const dbSet = async (session: ISession): Promise<InsertOneResult<ISession>> => {
-  return await sessions.insertOne(session);
-}
-
-export { dbClient, dbGet, dbSet };
+export default dbClient;

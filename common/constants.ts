@@ -1,4 +1,4 @@
-import { IRequest } from "./types";
+import { IRequest, ISession } from "./types";
 
 export const request: IRequest = {
     prompt: '',
@@ -21,4 +21,9 @@ export const request: IRequest = {
     ban_eos_token: false,
     skip_special_tokens: true,
     stopping_strings: ['\n##']
+}
+
+export const session: ISession = {
+  userId: '1a2b3c4d5e',
+  sessionLog: [],
 }

@@ -4,15 +4,20 @@ import { WebSocket } from 'ws';
 
 export const getQuestion = (ws: WebSocket, session: ISession, prompt: Prompt): string => {
     const input = prompt('You say: ');
-    if (input === '/quit') {
+    if (input === '/q') {
       ws.close(1000);
       process.exit();
     }
-    if (input === '/log') {
+    if (input === '/l') {
       console.log(session.sessionLog.join());
       getQuestion(ws, session, prompt);
     }
-    session.sessionLog.push('\n### Human:\n' + input);
+    if (input === '/purge') {
+      console.log(`${session.sessionLog.join('')}`);
+      getQuestion(ws, session, prompt);
+    }
+    const newEntry = '\n### Human:\n' + input;
+    session.sessionLog.push(newEntry);
     return `Continue this conversation.${session.sessionLog.join('')}### Assistant:\n`
   }
 
