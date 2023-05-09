@@ -4,13 +4,11 @@ dotenv.config();
 import WebSocket from 'ws';
 import { MongoClient, UpdateResult } from 'mongodb';
 import { request, session } from './common/constants';
-import promptSync from 'prompt-sync';
 import { ISession } from './common/types';
 import { getAnswer, getQuestion } from './helpers/helpers';
 import dbClient from './api/db_api';
 
 const api = process.env.API_URL || '';
-const prompt = promptSync();
 let answer = '';
 
 console.log(`Starting WebSocket connection to ${api}...`,);
@@ -23,9 +21,9 @@ ai.on('open', () => {
   console.log(`Connected to ${api}`);
 
   dbClient.get(session.userId)
-    .then((res: ISession | null) => {
+    .then(async (res: ISession | null) => {
       if(res) session.sessionLog = res.sessionLog;
-      request.prompt = getQuestion(ai, session, prompt);
+      request.prompt = await getQuestion(ai, session);
       getAnswer(ai, request);
     })
 })
@@ -38,11 +36,12 @@ ai.on('message', (event: string) => {
   } else {
     const newEntry = '\n### Assistant:\n' + answer;
     session.sessionLog.push(newEntry);
-    dbClient.set(session)
-      .then(() => {
+    dbClient
+      .set(session)
+      .then(async () => {
         answer = '';
         console.log('Once again: ')
-        request.prompt = getQuestion(ai, session, prompt);
+        request.prompt = await getQuestion(ai, session);
         getAnswer(ai, request);
       })
   }

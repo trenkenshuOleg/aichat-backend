@@ -1,20 +1,34 @@
-import {Prompt} from 'prompt-sync';
 import { IRequest, ISession } from "../common/types";
 import { WebSocket } from 'ws';
 
-export const getQuestion = (ws: WebSocket, session: ISession, prompt: Prompt): string => {
-    const input = prompt('You say: ');
+const prompt = async (msg: string): Promise<string> => {
+  return (new Promise((resolve: (val: string) => void, reject: (e: Error) => void): void => {
+    process.stdout.write(msg);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.once('data', (val) => {
+      process.stdin.pause();
+      resolve(String(val).trim());
+    });
+  })).catch((e: Error) => {
+    process.stdin.pause();
+    return Promise.reject(e.message);
+  });
+};
+
+export const getQuestion = async (ws: WebSocket, session: ISession): Promise<string> => {
+    const input = await prompt('You say: ');
     if (input === '/q') {
       ws.close(1000);
       process.exit();
     }
     if (input === '/l') {
       console.log(session.sessionLog.join());
-      getQuestion(ws, session, prompt);
+      getQuestion(ws, session);
     }
     if (input === '/purge') {
       console.log(`${session.sessionLog.join('')}`);
-      getQuestion(ws, session, prompt);
+      getQuestion(ws, session);
     }
     const newEntry = '\n### Human:\n' + input;
     session.sessionLog.push(newEntry);
