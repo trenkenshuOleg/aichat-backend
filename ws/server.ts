@@ -20,7 +20,11 @@ class wsServer {
         userId: '',
         sessionLog: [],
       }
+
       const aiClient = new WebSocket(api);
+      aiClient.on('message', (data: string) =>
+        medium.emit(wsEvent.promptAnswer, ws, data)
+      )
 
       this.connectionPool.push(aiClient);
 
@@ -40,7 +44,7 @@ class wsServer {
               session.sessionLog = answer.sessionLog;
             // else
             //   dbClient.set(session);
-            console.log('answ', answer);
+            console.log('answ restore', answer);
             if (ws.readyState === WebSocket.OPEN) {
               const message: IClientMessage = {
                 event: wsEvent.restore,
@@ -52,7 +56,8 @@ class wsServer {
             break;
 
           case wsEvent.prompt:
-            medium.emit('prompt', ws, aiClient, session, chunk.payload);
+            console.log('server prompt', chunk.payload)
+            medium.emit(wsEvent.prompt, ws, aiClient, session, chunk.payload);
             break;
 
           case wsEvent.tech:

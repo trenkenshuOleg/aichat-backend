@@ -1,3 +1,4 @@
+import dbClient from "../api/db_api";
 import { IRequest, ISession } from "../common/types";
 import { WebSocket } from 'ws';
 
@@ -41,9 +42,13 @@ export const getAnswer = (websocket: WebSocket, req: IRequest): void => {
   websocket.send(JSON.stringify({ ...req, prompt: data }));
 }
 
-export const generateId = () => {
-  return String(
+export const generateId = async () => {
+  const id = String(
     parseInt(Math.random().toString().slice(-10)).toString(16)
     + process.env.SECRET + parseInt(Math.random().toString().slice(-10)).toString(16)
-    + process.env.SECRET2 + parseInt(Math.random().toString().slice(-10)).toString(16))
+    + process.env.SECRET2 + parseInt(Math.random().toString().slice(-10)).toString(16));
+  const match = await dbClient.get(id);
+  if (match === null)
+    return id;
+  generateId();
 }
