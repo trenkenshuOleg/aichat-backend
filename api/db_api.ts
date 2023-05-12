@@ -9,7 +9,7 @@ class db implements Idb {
   constructor(url: string) {
     this.client = new MongoClient(url);
     this.sessions =
-    this.client
+      this.client
         .db("ai_chat")
         .collection<ISession>('ai_sessions');
   }
@@ -31,11 +31,11 @@ class db implements Idb {
   }
 
   async set(session: ISession) {
-    return await this.sessions.updateOne({ userId: session.userId}, { $set:session }, { upsert: true });
+    return await this.sessions.updateOne({ userId: session.userId }, { $set: session }, { upsert: true });
   }
 
   async purge(session: ISession) {
-    return await this.set({userId: session.userId, sessionLog: []})
+    return await this.set({ userId: session.userId, sessionLog: [] })
   }
 }
 
@@ -46,7 +46,6 @@ const mongoUrl =
   + (process.env.MNG_PASSWORD || '')
   + '@'
   + (process.env.MNG_URL || '');
-  + '/ai_chat'
 
 const dbClient = new db(mongoUrl);
 

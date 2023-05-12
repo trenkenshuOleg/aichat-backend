@@ -17,25 +17,33 @@ const prompt = async (msg: string): Promise<string> => {
 };
 
 export const getQuestion = async (ws: WebSocket, session: ISession): Promise<string> => {
-    const input = await prompt('You say: ');
-    if (input === '/q') {
-      ws.close(1000);
-      process.exit();
-    }
-    if (input === '/l') {
-      console.log(session.sessionLog.join());
-      getQuestion(ws, session);
-    }
-    if (input === '/purge') {
-      console.log(`${session.sessionLog.join('')}`);
-      getQuestion(ws, session);
-    }
-    const newEntry = '\n### Human:\n' + input;
-    session.sessionLog.push(newEntry);
-    return `Continue this conversation.${session.sessionLog.join('')}### Assistant:\n`
+  const input = await prompt('You say: ');
+  if (input === '/q') {
+    ws.close(1000);
+    process.exit();
   }
+  if (input === '/l') {
+    console.log(session.sessionLog.join());
+    getQuestion(ws, session);
+  }
+  /* TODO or discard */
+  if (input === '/purge') {
+    console.log(`${session.sessionLog.join('')}`);
+    getQuestion(ws, session);
+  }
+  const newEntry = '\n### Human:\n' + input;
+  session.sessionLog.push(newEntry);
+  return `Continue this conversation.${session.sessionLog.join('')}### Assistant:\n`
+}
 
-  export const getAnswer = (websocket: WebSocket, req: IRequest): void => {
-    const data = req.prompt.length > 2048 ? req.prompt.slice(-2048) : req.prompt;
-    websocket.send(JSON.stringify({...req, prompt: data}));
-  }
+export const getAnswer = (websocket: WebSocket, req: IRequest): void => {
+  const data = req.prompt.length > 2048 ? req.prompt.slice(-2048) : req.prompt;
+  websocket.send(JSON.stringify({ ...req, prompt: data }));
+}
+
+export const generateId = () => {
+  return String(
+    parseInt(Math.random().toString().slice(-10)).toString(16)
+    + process.env.SECRET + parseInt(Math.random().toString().slice(-10)).toString(16)
+    + process.env.SECRET2 + parseInt(Math.random().toString().slice(-10)).toString(16))
+}
