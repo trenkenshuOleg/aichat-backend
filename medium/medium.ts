@@ -1,24 +1,34 @@
 import WebSocket from "ws";
 import { EventEmitter } from "node:events";
 import { request } from "../common/constants";
-import { IAiMessage, IClientMessage, wsEvent } from "../ws/types";
+import { IAiMessage, IClientMessage, messageEvent } from "../ws/types";
 import { ISession } from "../common/types";
 
+// Medium between client and AI to transfer prompts and answers between the two
 const medium = new EventEmitter;
 
-medium.on(wsEvent.prompt, async (clientSocket: WebSocket, aiSocket: WebSocket, session: ISession, prompt: string) => {
+// Passing the prompt from client to AI
+medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession) => {
   if (aiSocket.readyState === WebSocket.OPEN) {
-    console.log('medium prompt', prompt);
-    const requestWithHistory = (session.sessionLog + '\n### Human:\n' + prompt).slice(-2048);
+    let history = '';
+    session.sessionLog.forEach(item => {
+      history += `\n### ${item.sender}:\n${item.message}`;
+    });
+    const requestWithHistory =
+      ('Continue the dialogue properly.'
+        + history
+        + '/n ### Assistant:\n')
+        .slice(-2048);
     aiSocket.send(JSON.stringify({ ...request, prompt: requestWithHistory }));
   }
 })
 
-medium.on('promptAnswer', (clientSocket: WebSocket, data: string) => {
+// Streaming answer from AI to client
+medium.on(messageEvent.promptAnswer, (clientSocket: WebSocket, data: string) => {
   const chunk: IAiMessage = JSON.parse(data);
   const msgType: string = chunk.event;
   const toSend: IClientMessage = {
-    event: wsEvent.promptAnswer,
+    event: messageEvent.promptAnswer,
     payload: chunk.text,
     type: msgType
   }

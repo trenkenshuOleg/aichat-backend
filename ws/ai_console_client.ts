@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import { request, session } from '../common/constants';
-import { ISession } from '../common/types';
+import { ILogMessage, ISession } from '../common/types';
 import { getAnswer, getQuestion } from '../helpers/helpers';
 import dbClient from '../api/db_api';
 
@@ -26,7 +26,10 @@ ai.on('message', (event: string) => {
     answer += msg.text;
     process.stdout.write(`${msg.text}`);
   } else {
-    const newEntry = '\n### Assistant:\n' + answer;
+    const newEntry: ILogMessage = {
+      sender: 'Assistant',
+      message: answer
+    };
     session.sessionLog.push(newEntry);
     dbClient
       .set(session)

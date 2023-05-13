@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { IClientMessage, wsEvent } from "./types";
+import { IClientMessage, wsEvents, messageEvent, IAiMessage } from "./types";
 import { ISession } from "../common/types";
 import dbClient from "../api/db_api";
 import medium from "../medium/medium";
@@ -7,6 +7,7 @@ import { api } from "./ai_console_client";
 import { aiClient } from "./ai_class";
 import { generateId } from "../helpers/helpers";
 
+// WS Server Decorator
 class wsServer {
   server: WebSocketServer;
   connectionPool: WebSocket[];
@@ -14,53 +15,73 @@ class wsServer {
   constructor(port: number) {
     this.connectionPool = [];
     this.server = new WebSocketServer({ port });
-    this.server.on('connection', (ws) => {
+
+    // How SERVER acts when a client is connected
+    this.server.on(wsEvents.connect, (wsClient) => {
       console.log('s con')
       const session: ISession = {
         userId: '',
         sessionLog: [],
       }
 
+      // For each new client we create new connection to AI server
       const aiClient = new WebSocket(api);
-      aiClient.on('message', (data: string) =>
-        medium.emit(wsEvent.promptAnswer, ws, data)
-      )
 
+      // Listen to answers from AI to send it to a client and save to a session log
+      aiClient.on(wsEvents.message, (data: string) => {
+        const lastMessageInLog = session.sessionLog[session.sessionLog.length - 1];
+        const aiMessage: IAiMessage = JSON.parse(data);
+        if (lastMessageInLog.sender !== 'Assistant') {
+          session.sessionLog.push({
+            sender: 'Assistant',
+            message: aiMessage.text
+          });
+        } else if (aiMessage.event !== 'stream_end') {
+          lastMessageInLog.message += aiMessage.text;
+        } else if (aiMessage.event === 'stream_end') {
+          dbClient.set(session);
+        }
+        medium.emit(messageEvent.promptAnswer, wsClient, data);
+      })
+      // For further limitation of graphic cards load. **TODO**
       this.connectionPool.push(aiClient);
 
-      ws.on('message', async (data: string) => {
+      wsClient.on(wsEvents.message, async (data: string) => {
         console.log('s mes', JSON.parse(data));
         const chunk: IClientMessage = JSON.parse(data);
 
         switch (chunk.event) {
-          case wsEvent.restore:
+          // If client tries to load saved session
+          case messageEvent.restore:
             const id = chunk.payload === 'no ID'
-              ? generateId()
+              ? await generateId()
               : chunk.payload;
             const answer: ISession | null = await dbClient.get(String(id));
-
             session.userId = String(id);
             if (answer)
               session.sessionLog = answer.sessionLog;
-            // else
-            //   dbClient.set(session);
             console.log('answ restore', answer);
-            if (ws.readyState === WebSocket.OPEN) {
-              const message: IClientMessage = {
-                event: wsEvent.restore,
+            if (wsClient.readyState === WebSocket.OPEN) {
+              const loadedSession: IClientMessage = {
+                event: messageEvent.restore,
                 payload: session,
               };
-              console.log(message);
-              ws.send(JSON.stringify(message));
+              console.log(loadedSession);
+              wsClient.send(JSON.stringify(loadedSession));
             }
             break;
 
-          case wsEvent.prompt:
-            console.log('server prompt', chunk.payload)
-            medium.emit(wsEvent.prompt, ws, aiClient, session, chunk.payload);
+          // If client sends prompt we add it to a session log and pass to AI to process
+          case messageEvent.prompt:
+            console.log('server prompt', chunk.payload);
+            session.sessionLog.push({
+              sender: 'Human',
+              message: chunk.payload as string,
+            });
+            medium.emit(messageEvent.prompt, aiClient, session);
             break;
 
-          case wsEvent.tech:
+          case messageEvent.tech:
             /* TODO */
             break;
 
@@ -69,7 +90,7 @@ class wsServer {
         }
       })
 
-      ws.on('error', (err: Error) => console.log(err.message));
+      wsClient.on(wsEvents.error, (err: Error) => console.log(err.message));
 
     })
   }

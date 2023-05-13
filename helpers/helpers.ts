@@ -1,5 +1,5 @@
 import dbClient from "../api/db_api";
-import { IRequest, ISession } from "../common/types";
+import { ILogMessage, IRequest, ISession } from "../common/types";
 import { WebSocket } from 'ws';
 
 const prompt = async (msg: string): Promise<string> => {
@@ -32,9 +32,22 @@ export const getQuestion = async (ws: WebSocket, session: ISession): Promise<str
     console.log(`${session.sessionLog.join('')}`);
     getQuestion(ws, session);
   }
-  const newEntry = '\n### Human:\n' + input;
+  const newEntry: ILogMessage = {
+    sender: 'Human',
+    message: input,
+  };
   session.sessionLog.push(newEntry);
-  return `Continue this conversation.${session.sessionLog.join('')}### Assistant:\n`
+  let history = '';
+  session.sessionLog.forEach(item => {
+    history += `\n### ${item.sender}:\n${item.message}`;
+  });
+  const requestWithHistory =
+    ('Continue the dialogue properly.'
+      + history
+      + '/n ### Assistant:\n')
+      .slice(-2048);
+
+  return requestWithHistory
 }
 
 export const getAnswer = (websocket: WebSocket, req: IRequest): void => {

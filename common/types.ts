@@ -20,7 +20,13 @@ export interface IRequest {
   skip_special_tokens: boolean,
   stopping_strings: string[],
 }
+
+export interface ILogMessage {
+  sender: 'Assistant' | 'Human',
+  message: string;
+}
+
 export interface ISession {
   userId: string,
-  sessionLog: string[],
+  sessionLog: ILogMessage[],
 }
