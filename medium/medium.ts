@@ -15,7 +15,7 @@ medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession) =>
       history += `\n### ${item.sender}:\n${item.message}`;
     });
     const requestWithHistory =
-      ('Continue the dialogue properly.'
+      ('Continue the dialogue properly. Say hello and offer your help'
         + history
         + '/n ### Assistant:\n')
         .slice(-2048);

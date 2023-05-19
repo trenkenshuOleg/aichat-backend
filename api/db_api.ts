@@ -34,8 +34,8 @@ class db implements Idb {
     return await this.sessions.updateOne({ userId: session.userId }, { $set: session }, { upsert: true });
   }
 
-  async purge(session: ISession) {
-    return await this.set({ userId: session.userId, sessionLog: [] })
+  async purge(userId: string) {
+    return await this.set({ userId: userId, sessionLog: [] })
   }
 }
 

@@ -8,6 +8,15 @@ export enum messageEvent {
   promptAnswer = 'promptAnswer'
 }
 
+export enum techEvents {
+  erase = 'eraseSession'
+}
+
+export enum streamEvents {
+  stream = 'text_stream',
+  end = 'stream_end'
+}
+
 export enum wsEvents {
   message = 'message',
   connect = 'connection',
@@ -21,7 +30,7 @@ export interface IClientMessage {
 }
 
 export interface IAiMessage {
-  event: 'txt_stream' | 'stream_end';
+  event: 'text_stream' | 'stream_end';
   text: string;
   message_num: number;
 }

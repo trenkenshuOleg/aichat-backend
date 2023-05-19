@@ -9,7 +9,7 @@ export const request: IRequest = {
   typical_p: 1,
   repetition_penalty: 1.2,
   top_k: 40,
-  min_length: 30,
+  min_length: 0,
   no_repeat_ngram_size: 0,
   num_beams: 1,
   penalty_alpha: 0,
@@ -20,10 +20,10 @@ export const request: IRequest = {
   truncation_length: 2048,
   ban_eos_token: false,
   skip_special_tokens: true,
-  stopping_strings: ['\n##']
+  stopping_strings: ['\n##', '###']
 }
 
 export const session: ISession = {
-  userId: '1a2b3c4d5e!',
+  userId: '1a2b3c4d5e!1',
   sessionLog: [],
 }

@@ -24,13 +24,14 @@ export const getQuestion = async (ws: WebSocket, session: ISession): Promise<str
     process.exit();
   }
   if (input === '/l') {
-    console.log(session.sessionLog.join());
-    getQuestion(ws, session);
+    console.log(session.sessionLog.map(el => `${el.sender}: ${el.message}\n`).join(''));
+    return getQuestion(ws, session);
   }
   /* TODO or discard */
   if (input === '/purge') {
-    console.log(`${session.sessionLog.join('')}`);
-    getQuestion(ws, session);
+    dbClient.purge(session.userId);
+    session.sessionLog = [];
+    return getQuestion(ws, session);
   }
   const newEntry: ILogMessage = {
     sender: 'Human',
@@ -42,10 +43,9 @@ export const getQuestion = async (ws: WebSocket, session: ISession): Promise<str
     history += `\n### ${item.sender}:\n${item.message}`;
   });
   const requestWithHistory =
-    ('Continue the dialogue properly.'
+    ('Continue the dialogue properly. Say hello and offer your help'
       + history
       + '/n ### Assistant:\n')
-      .slice(-2048);
 
   return requestWithHistory
 }
@@ -64,4 +64,8 @@ export const generateId = async () => {
   if (match === null)
     return id;
   generateId();
+}
+
+export const isId = (isItId: string) => {
+  return isItId.slice(8, 14) === process.env.SECRET && isItId.slice(-11, -8) === process.env.SECRET2
 }

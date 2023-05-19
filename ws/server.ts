@@ -1,20 +1,31 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { IClientMessage, wsEvents, messageEvent, IAiMessage } from "./types";
-import { ISession } from "../common/types";
+import { IClientMessage, wsEvents, messageEvent, IAiMessage, techEvents } from "./types";
+import { ILogMessage, ISession } from "../common/types";
 import dbClient from "../api/db_api";
 import medium from "../medium/medium";
 import { api } from "./ai_console_client";
 import { aiClient } from "./ai_class";
-import { generateId } from "../helpers/helpers";
+import { generateId, isId } from "../helpers/helpers";
+import fs from 'node:fs';
+//import http from 'node:http';
 
 // WS Server Decorator
 class wsServer {
-  server: WebSocketServer;
-  connectionPool: WebSocket[];
-
+  private server: WebSocketServer;
+  private connectionPool: WebSocket[];
+  //private httpInstance: http.Server;
   constructor(port: number) {
     this.connectionPool = [];
-    this.server = new WebSocketServer({ port });
+
+    // // HTTPS wrapper for ws server
+    // this.httpInstance = http.createServer();
+    // this.server = new WebSocketServer({
+    //   server: this.httpInstance,
+    // });
+
+    this.server = new WebSocketServer({
+      port,
+    });
 
     // How SERVER acts when a client is connected
     this.server.on(wsEvents.connect, (wsClient) => {
@@ -29,14 +40,14 @@ class wsServer {
 
       // Listen to answers from AI to send it to a client and save to a session log
       aiClient.on(wsEvents.message, (data: string) => {
-        const lastMessageInLog = session.sessionLog[session.sessionLog.length - 1];
+        const lastMessageInLog: ILogMessage | undefined = session.sessionLog[session.sessionLog.length - 1];
         const aiMessage: IAiMessage = JSON.parse(data);
-        if (lastMessageInLog.sender !== 'Assistant') {
+        if (!lastMessageInLog || lastMessageInLog.sender !== 'Assistant') {
           session.sessionLog.push({
             sender: 'Assistant',
             message: aiMessage.text
           });
-        } else if (aiMessage.event !== 'stream_end') {
+        } else if (aiMessage.event === 'text_stream') {
           lastMessageInLog.message += aiMessage.text;
         } else if (aiMessage.event === 'stream_end') {
           dbClient.set(session);
@@ -51,7 +62,7 @@ class wsServer {
         const chunk: IClientMessage = JSON.parse(data);
 
         switch (chunk.event) {
-          // If client tries to load saved session
+          // If client tries to load saved session **REWRITE**
           case messageEvent.restore:
             const id = chunk.payload === 'no ID'
               ? await generateId()
@@ -60,13 +71,13 @@ class wsServer {
             session.userId = String(id);
             if (answer)
               session.sessionLog = answer.sessionLog;
-            console.log('answ restore', answer);
+            // console.log('answ restore', answer);
             if (wsClient.readyState === WebSocket.OPEN) {
               const loadedSession: IClientMessage = {
                 event: messageEvent.restore,
                 payload: session,
               };
-              console.log(loadedSession);
+              console.log(session.sessionLog);
               wsClient.send(JSON.stringify(loadedSession));
             }
             break;
@@ -82,7 +93,25 @@ class wsServer {
             break;
 
           case messageEvent.tech:
-            /* TODO */
+            switch (chunk.type) {
+              case techEvents.erase:
+                console.log('is id', chunk.payload, isId(chunk.payload as string));
+                if (typeof chunk.payload === 'string') {
+                  console.log('erasing ' + chunk.payload);
+                  const result = await dbClient.purge(chunk.payload);
+                  if (result.matchedCount === 1) {
+                    session.sessionLog = [];
+                    const clearSession: IClientMessage = {
+                      event: messageEvent.restore,
+                      payload: session,
+                    };
+                    wsClient.send(JSON.stringify(clearSession));
+                    console.log('erased ' + chunk.payload)
+                  } else {
+                    console.log('Try to remove session ' + session.userId + ' but its not there')
+                  }
+                }
+            }
             break;
 
           default:
@@ -93,7 +122,9 @@ class wsServer {
       wsClient.on(wsEvents.error, (err: Error) => console.log(err.message));
 
     })
+
   }
+
 }
 
 
