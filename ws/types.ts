@@ -10,7 +10,8 @@ export enum messageEvent {
 
 export enum techEvents {
   erase = 'eraseSession',
-  regenerate = 'regenerate'
+  regenerate = 'regenerate',
+  goOn = 'goOn',
 }
 
 export enum streamEvents {

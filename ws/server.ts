@@ -89,7 +89,7 @@ class wsServer {
               sender: 'Human',
               message: chunk.payload as string,
             });
-            medium.emit(messageEvent.prompt, aiClient, session);
+            medium.emit(messageEvent.prompt, aiClient, session, false);
             break;
 
           case messageEvent.tech:
@@ -112,9 +112,16 @@ class wsServer {
                   }
                 }
                 break;
+
               case techEvents.regenerate:
                 session.sessionLog.pop();
-                medium.emit(messageEvent.prompt, aiClient, session);
+                medium.emit(messageEvent.prompt, aiClient, session, false);
+                break;
+
+              case techEvents.goOn:
+                medium.emit(messageEvent.prompt, aiClient, session, true);
+                break;
+
             }
             break;
 

@@ -8,16 +8,19 @@ import { ISession } from "../common/types";
 const medium = new EventEmitter;
 
 // Passing the prompt from client to AI
-medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession) => {
+medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession, goOn: boolean = false) => {
   if (aiSocket.readyState === WebSocket.OPEN) {
     let history = '';
     session.sessionLog.forEach(item => {
       history += `\n### ${item.sender}:\n${item.message}`;
     });
     const requestWithHistory =
-      ('Continue the dialogue properly. Say hello and offer your help'
+      (
+        'Continue the dialogue properly. '
+        + (goOn ? `You are Assistant: ` : ' Say hello and offer your help')
         + history
-        + '/n ### Assistant:\n')
+        + (goOn ? '### Human: Continue your phrase from where you finished. /n ### Assistant:\n' : '/n ### Assistant:\n')
+      )
         .slice(-2048);
     aiSocket.send(JSON.stringify({ ...request, prompt: requestWithHistory }));
   }
