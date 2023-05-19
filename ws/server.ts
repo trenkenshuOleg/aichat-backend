@@ -13,15 +13,8 @@ import fs from 'node:fs';
 class wsServer {
   private server: WebSocketServer;
   private connectionPool: WebSocket[];
-  //private httpInstance: http.Server;
   constructor(port: number) {
     this.connectionPool = [];
-
-    // // HTTPS wrapper for ws server
-    // this.httpInstance = http.createServer();
-    // this.server = new WebSocketServer({
-    //   server: this.httpInstance,
-    // });
 
     this.server = new WebSocketServer({
       port,
@@ -30,6 +23,7 @@ class wsServer {
     // How SERVER acts when a client is connected
     this.server.on(wsEvents.connect, (wsClient) => {
       console.log('s con')
+      let pingCounter = 0;
       const session: ISession = {
         userId: '',
         sessionLog: [],
@@ -121,6 +115,9 @@ class wsServer {
               case techEvents.goOn:
                 medium.emit(messageEvent.prompt, aiClient, session, true);
                 break;
+
+              case techEvents.ping:
+                console.log('got ping', ++pingCounter, chunk.payload);
 
             }
             break;
