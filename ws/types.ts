@@ -9,7 +9,8 @@ export enum messageEvent {
 }
 
 export enum techEvents {
-  erase = 'eraseSession'
+  erase = 'eraseSession',
+  regenerate = 'regenerate'
 }
 
 export enum streamEvents {
@@ -30,7 +31,7 @@ export interface IClientMessage {
 }
 
 export interface IAiMessage {
-  event: 'text_stream' | 'stream_end';
+  event: streamEvents;
   text: string;
   message_num: number;
 }

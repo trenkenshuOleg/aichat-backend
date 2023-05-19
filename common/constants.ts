@@ -20,7 +20,7 @@ export const request: IRequest = {
   truncation_length: 2048,
   ban_eos_token: false,
   skip_special_tokens: true,
-  stopping_strings: ['\n##', '###']
+  stopping_strings: ['\n##', '##']
 }
 
 export const session: ISession = {

@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws";
-import { IClientMessage, wsEvents, messageEvent, IAiMessage, techEvents } from "./types";
+import { IClientMessage, wsEvents, messageEvent, IAiMessage, techEvents, streamEvents } from "./types";
 import { ILogMessage, ISession } from "../common/types";
 import dbClient from "../api/db_api";
 import medium from "../medium/medium";
@@ -47,9 +47,9 @@ class wsServer {
             sender: 'Assistant',
             message: aiMessage.text
           });
-        } else if (aiMessage.event === 'text_stream') {
+        } else if (aiMessage.event === streamEvents.stream) {
           lastMessageInLog.message += aiMessage.text;
-        } else if (aiMessage.event === 'stream_end') {
+        } else if (aiMessage.event === streamEvents.end) {
           dbClient.set(session);
         }
         medium.emit(messageEvent.promptAnswer, wsClient, data);
@@ -111,6 +111,10 @@ class wsServer {
                     console.log('Try to remove session ' + session.userId + ' but its not there')
                   }
                 }
+                break;
+              case techEvents.regenerate:
+                session.sessionLog.pop();
+                medium.emit(messageEvent.prompt, aiClient, session);
             }
             break;
 
