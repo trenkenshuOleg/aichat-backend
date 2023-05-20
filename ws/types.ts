@@ -5,14 +5,15 @@ export enum messageEvent {
   restore = 'restoreSession',
   prompt = 'prompt',
   tech = 'technical',
-  promptAnswer = 'promptAnswer'
+  promptAnswer = 'promptAnswer',
+  queue = 'queue',
 }
 
 export enum techEvents {
   erase = 'eraseSession',
   regenerate = 'regenerate',
   goOn = 'goOn',
-  ping = 'ping',
+  ping = 'ping'
 }
 
 export enum streamEvents {

@@ -52,7 +52,7 @@ class wsServer {
       this.connectionPool.push(aiClient);
 
       wsClient.on(wsEvents.message, async (data: string) => {
-        console.log('s mes', JSON.parse(data));
+        //console.log('s mes', JSON.parse(data));
         const chunk: IClientMessage = JSON.parse(data);
 
         switch (chunk.event) {
@@ -83,7 +83,7 @@ class wsServer {
               sender: 'Human',
               message: chunk.payload as string,
             });
-            medium.emit(messageEvent.prompt, aiClient, session, false);
+            medium.emit(messageEvent.prompt, aiClient, wsClient, session, false);
             break;
 
           case messageEvent.tech:
@@ -109,11 +109,11 @@ class wsServer {
 
               case techEvents.regenerate:
                 session.sessionLog.pop();
-                medium.emit(messageEvent.prompt, aiClient, session, false);
+                medium.emit(messageEvent.prompt, aiClient, wsClient, session, false);
                 break;
 
               case techEvents.goOn:
-                medium.emit(messageEvent.prompt, aiClient, session, true);
+                medium.emit(messageEvent.prompt, aiClient, wsClient, session, true);
                 break;
 
               case techEvents.ping:

@@ -3,12 +3,15 @@ import { EventEmitter } from "node:events";
 import { request } from "../common/constants";
 import { IAiMessage, IClientMessage, messageEvent } from "../ws/types";
 import { ISession } from "../common/types";
+import { Balancer } from "../balancer/balancer";
+
+const loadBalancer = new Balancer(1);
 
 // Medium between client and AI to transfer prompts and answers between the two
 const medium = new EventEmitter;
 
 // Passing the prompt from client to AI
-medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession, goOn: boolean = false) => {
+medium.on(messageEvent.prompt, async (aiSocket: WebSocket, wsClient: WebSocket, session: ISession, goOn: boolean = false) => {
   if (aiSocket.readyState === WebSocket.OPEN) {
     let history = '';
     session.sessionLog.forEach(item => {
@@ -22,20 +25,20 @@ medium.on(messageEvent.prompt, async (aiSocket: WebSocket, session: ISession, go
         + (goOn ? '### Human: Continue your phrase from where you finished. /n ### Assistant:\n' : '/n ### Assistant:\n')
       )
         .slice(-2048);
-    aiSocket.send(JSON.stringify({ ...request, prompt: requestWithHistory }));
+    //aiSocket.send(JSON.stringify({ ...request, prompt: requestWithHistory }));
+    loadBalancer.addItem(aiSocket, wsClient, { ...request, prompt: requestWithHistory })
   }
 })
 
 // Streaming answer from AI to client
 medium.on(messageEvent.promptAnswer, (clientSocket: WebSocket, data: string) => {
   const chunk: IAiMessage = JSON.parse(data);
-  const msgType: string = chunk.event;
   const toSend: IClientMessage = {
     event: messageEvent.promptAnswer,
     payload: chunk.text,
-    type: msgType
+    type: chunk.event,
   }
-  console.log('medium promptAnswer', chunk);
+  //console.log('medium promptAnswer', chunk);
   if (clientSocket.readyState === WebSocket.OPEN) {
     clientSocket.send(JSON.stringify(toSend));
   }
