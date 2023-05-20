@@ -7,13 +7,14 @@ export enum messageEvent {
   tech = 'technical',
   promptAnswer = 'promptAnswer',
   queue = 'queue',
+  ready = 'ready',
 }
 
 export enum techEvents {
   erase = 'eraseSession',
   regenerate = 'regenerate',
   goOn = 'goOn',
-  ping = 'ping'
+  ping = 'ping',
 }
 
 export enum streamEvents {

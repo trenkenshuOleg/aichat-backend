@@ -31,6 +31,9 @@ class wsServer {
 
       // For each new client we create new connection to AI server
       const aiClient = new WebSocket(api);
+      const aiConnected = new Promise<boolean>(resolve => {
+        aiClient.once('open', () => resolve(true))
+      })
 
       // Listen to answers from AI to send it to a client and save to a session log
       aiClient.on(wsEvents.message, (data: string) => {
@@ -54,25 +57,32 @@ class wsServer {
       wsClient.on(wsEvents.message, async (data: string) => {
         //console.log('s mes', JSON.parse(data));
         const chunk: IClientMessage = JSON.parse(data);
-
         switch (chunk.event) {
-          // If client tries to load saved session **REWRITE**
+          // If client tries to load saved session
           case messageEvent.restore:
             const id = chunk.payload === 'no ID'
               ? await generateId()
               : chunk.payload;
-            const answer: ISession | null = await dbClient.get(String(id));
+            const answer: Promise<ISession | null> = dbClient.get(String(id));
+            const notEmpty = await answer;
+            if (notEmpty)
+              session.sessionLog = notEmpty.sessionLog;
             session.userId = String(id);
-            if (answer)
-              session.sessionLog = answer.sessionLog;
-            // console.log('answ restore', answer);
             if (wsClient.readyState === WebSocket.OPEN) {
               const loadedSession: IClientMessage = {
                 event: messageEvent.restore,
                 payload: session,
               };
-              console.log(session.sessionLog);
+              const readyState: IClientMessage = {
+                event: messageEvent.ready,
+                payload: '',
+              }
+              console.log('loaded session for', session.userId);
               wsClient.send(JSON.stringify(loadedSession));
+              if (await aiConnected) {
+                console.log('server connection ready for', session.userId);
+                wsClient.send(JSON.stringify(readyState));
+              }
             }
             break;
 
@@ -82,7 +92,7 @@ class wsServer {
             session.sessionLog.push({
               sender: 'Human',
               message: chunk.payload as string,
-            });
+            })
             medium.emit(messageEvent.prompt, aiClient, wsClient, session, false);
             break;
 
