@@ -46,9 +46,12 @@ export class Balancer {
         this.working = this.working.filter(elem => elem !== item.aiClient);
         if (this.queue.length) {
           const next = this.queue.shift();
-          next && this.run(next);
-
-          this.queue.forEach(queued => {
+          let restQue = [...this.queue];
+          if (next) {
+            this.run(next);
+            restQue = [...this.queue, next];
+          }
+          restQue.forEach(queued => {
             const stillInQueue: IClientMessage = {
               event: messageEvent.queue,
               payload: String(this.queue.indexOf(queued)),

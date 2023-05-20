@@ -5,7 +5,7 @@ import { IAiMessage, IClientMessage, messageEvent } from "../ws/types";
 import { ISession } from "../common/types";
 import { Balancer } from "../balancer/balancer";
 
-const loadBalancer = new Balancer(1);
+const loadBalancer = new Balancer(2);
 
 // Medium between client and AI to transfer prompts and answers between the two
 const medium = new EventEmitter;
