@@ -54,8 +54,16 @@ class wsServer {
       // For further limitation of graphic cards load. **TODO**
       this.connectionPool.push(aiClient);
 
-      wsClient.on(wsEvents.message, async (data: string) => {
-        //console.log('s mes', JSON.parse(data));
+      wsClient.on(wsEvents.message, handleMessage);
+
+      wsClient.on(wsEvents.error, (err: Error) => console.log('some error:', err.message));
+      wsClient.on(wsEvents.close, () => {
+        console.log(wsEvents.close, session.userId);
+        wsClient.off(wsEvents.close, handleMessage);
+        aiClient.close(1000);
+      });
+
+      async function handleMessage(data: string) {
         const chunk: IClientMessage = JSON.parse(data);
         switch (chunk.event) {
           // If client tries to load saved session
@@ -135,10 +143,7 @@ class wsServer {
           default:
             console.log('Unknown WS event:', chunk.event, chunk.payload);
         }
-      })
-
-      wsClient.on(wsEvents.error, (err: Error) => console.log(err.message));
-
+      }
     })
 
   }

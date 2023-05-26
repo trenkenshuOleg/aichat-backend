@@ -25,7 +25,8 @@ export enum streamEvents {
 export enum wsEvents {
   message = 'message',
   connect = 'connection',
-  error = 'error'
+  error = 'error',
+  close = 'close',
 }
 
 export interface IClientMessage {
