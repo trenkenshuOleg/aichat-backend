@@ -40,30 +40,36 @@ export class Balancer {
   private run = (item: IqueueItem) => {
     item.aiClient.send(JSON.stringify(item.request));
     this.working.push(item.aiClient);
+    const getNextAndRun = () => {
+      this.working = this.working.filter(elem => elem !== item.aiClient);
+      if (this.queue.length) {
+        const next = this.queue.shift();
+        let restQue = [...this.queue];
+        if (next) {
+          this.run(next);
+          restQue = [...this.queue, next];
+        }
+        restQue.forEach(queued => {
+          const stillInQueue: IClientMessage = {
+            event: messageEvent.queue,
+            payload: String(this.queue.indexOf(queued)),
+          }
+          queued.wsClient.send(JSON.stringify(stillInQueue));
+        })
+        item.aiClient.off(wsEvents.message, process);
+        console.log('end, start next working', this.working.length, 'waiting', this.queue.length);
+      }
+    };
     const process = (data: string) => {
       const parsed: IAiMessage = JSON.parse(data);
       if (parsed.event === streamEvents.end) {
-        this.working = this.working.filter(elem => elem !== item.aiClient);
-        if (this.queue.length) {
-          const next = this.queue.shift();
-          let restQue = [...this.queue];
-          if (next) {
-            this.run(next);
-            restQue = [...this.queue, next];
-          }
-          restQue.forEach(queued => {
-            const stillInQueue: IClientMessage = {
-              event: messageEvent.queue,
-              payload: String(this.queue.indexOf(queued)),
-            }
-            queued.wsClient.send(JSON.stringify(stillInQueue));
-          })
-          item.aiClient.off(wsEvents.message, process);
-          console.log('end, start next working', this.working.length, 'waiting', this.queue.length);
-          // console.log(this.queue);
-        }
+        getNextAndRun();
       }
     };
     item.aiClient.on(wsEvents.message, process);
+    item.wsClient.on(wsEvents.error, (error: Error) => {
+      console.log('balancer wsError', error.message);
+      getNextAndRun();
+    })
   }
 }

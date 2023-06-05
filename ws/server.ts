@@ -56,10 +56,15 @@ class wsServer {
 
       wsClient.on(wsEvents.message, handleMessage);
 
-      wsClient.on(wsEvents.error, (err: Error) => console.log('some error:', err.message));
+      wsClient.on(wsEvents.error, (err: Error) => {
+        console.log('some error:', err.message);
+        wsClient.off(wsEvents.message, handleMessage);
+        wsClient.close(1000);
+        //balancer.remove
+      });
       wsClient.on(wsEvents.close, () => {
         console.log(wsEvents.close, session.userId);
-        wsClient.off(wsEvents.close, handleMessage);
+        wsClient.off(wsEvents.message, handleMessage);
         aiClient.close(1000);
       });
 
@@ -135,7 +140,7 @@ class wsServer {
                 break;
 
               case techEvents.ping:
-                console.log('got ping', ++pingCounter, chunk.payload);
+                console.log('got ping', ++pingCounter, session.userId);
 
             }
             break;

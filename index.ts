@@ -6,4 +6,5 @@ import wsServer from './ws/server';
 
 console.log(`Starting WebSocket connection to ${api}...`,);
 const server = new wsServer(Number(process.env.SERVER_PORT));
+process.on('warning', console.warn);
 
