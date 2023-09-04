@@ -34,7 +34,14 @@ export class Balancer {
         console.log('new in working', this.working.length, 'waiting', this.queue.length)
       }
     }
-    // console.log(this.queue);
+    const removeOnError = () => {
+      this.queue = this.queue.filter(inQueue => inQueue.aiClient !== item.aiClient)
+      if (this.working.length < this.maxLoad && this.queue.length) {
+        this.run(this.queue[0])
+      }
+    }
+    wsClient.once(wsEvents.error, removeOnError)
+    wsClient.once(wsEvents.close, removeOnError)
   }
 
   private run = (item: IqueueItem) => {
@@ -68,9 +75,9 @@ export class Balancer {
     };
     item.aiClient.on(wsEvents.message, process);
     item.aiClient.on(wsEvents.close, () => item.aiClient.off(wsEvents.message, process));
-    item.wsClient.on(wsEvents.error, (error: Error) => {
-      console.log('balancer wsError', error.message);
-      getNextAndRun();
-    })
+    // item.wsClient.on(wsEvents.error, (error: Error) => {
+    //   console.log('balancer wsError', error.message);
+    //   getNextAndRun();
+    // })
   }
 }
