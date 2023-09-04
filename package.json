@@ -35,6 +35,7 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-n": "^15.7.0",
     "eslint-plugin-promise": "^6.1.1",
+    "nodemon": "^2.0.22",
     "prettier": "^2.8.8",
     "typescript": "^4.9.5",
     "ws-events": "^1.0.0"

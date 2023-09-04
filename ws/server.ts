@@ -7,6 +7,7 @@ import { api } from "./ai_console_client";
 import { aiClient } from "./ai_class";
 import { generateId, isId } from "../helpers/helpers";
 import fs from 'node:fs';
+import { inspect } from 'node:util';
 //import http from 'node:http';
 
 // WS Server Decorator
@@ -28,6 +29,10 @@ class wsServer {
         userId: '',
         sessionLog: [],
       }
+      const pingFromServer = setInterval(() => {
+        wsClient.ping();
+        //console.log('pinging to client', session.userId)
+      }, 3000)
 
       // For each new client we create new connection to AI server
       const aiClient = new WebSocket(api);
@@ -57,9 +62,9 @@ class wsServer {
       wsClient.on(wsEvents.message, handleMessage);
 
       wsClient.on(wsEvents.error, (err: Error) => {
-        console.log('some error:', err.message);
-        wsClient.off(wsEvents.message, handleMessage);
-        wsClient.close(1000);
+        console.log('some error:', err);
+        // wsClient.off(wsEvents.message, handleMessage);
+        // wsClient.close(1000);
         //balancer.remove
       });
       wsClient.on(wsEvents.close, () => {
@@ -70,6 +75,7 @@ class wsServer {
 
       async function handleMessage(data: string) {
         const chunk: IClientMessage = JSON.parse(data);
+        //  console.log('inbound message', inspect(chunk));
         switch (chunk.event) {
           // If client tries to load saved session
           case messageEvent.restore:

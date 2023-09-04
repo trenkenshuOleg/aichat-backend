@@ -67,6 +67,7 @@ export class Balancer {
       }
     };
     item.aiClient.on(wsEvents.message, process);
+    item.aiClient.on(wsEvents.close, () => item.aiClient.off(wsEvents.message, process));
     item.wsClient.on(wsEvents.error, (error: Error) => {
       console.log('balancer wsError', error.message);
       getNextAndRun();
