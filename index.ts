@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 import dbClient from './api/db_api';
-import { ai, api } from './ws/ai_console_client'
+import { api } from './ws/ai_console_client'
 import wsServer from './ws/server';
 
 console.log(`Starting WebSocket connection to ${api}...`,);

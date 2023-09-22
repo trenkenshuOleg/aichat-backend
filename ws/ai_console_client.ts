@@ -46,4 +46,8 @@ ai.on('ping', () => {
   ai.pong('ok', true);
 });
 
-ai.on('error', (err: WebSocket.ErrorEvent) => { console.log(err.message) });
+ai.on('error', (err: WebSocket.ErrorEvent) => {
+  console.log(err.message);
+  if (err.message === "ECONNREFUSED") {
+  }
+});
