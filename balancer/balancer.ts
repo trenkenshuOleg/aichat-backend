@@ -34,14 +34,6 @@ export class Balancer {
         console.log('new in working', this.working.length, 'waiting', this.queue.length)
       }
     }
-    const removeOnError = () => {
-      this.queue = this.queue.filter(inQueue => inQueue.aiClient !== item.aiClient)
-      if (this.working.length < this.maxLoad && this.queue.length) {
-        this.run(this.queue[0])
-      }
-    }
-    wsClient.once(wsEvents.error, removeOnError)
-    wsClient.once(wsEvents.close, removeOnError)
   }
 
   private run = (item: IqueueItem) => {
@@ -69,7 +61,7 @@ export class Balancer {
     };
     const process = (data: string) => {
       const parsed: IAiMessage = JSON.parse(data);
-      if (parsed.event === streamEvents.end) {
+      if (parsed.event === streamEvents.end || item.wsClient.readyState == item.wsClient.CLOSED) {
         getNextAndRun();
       }
     };
